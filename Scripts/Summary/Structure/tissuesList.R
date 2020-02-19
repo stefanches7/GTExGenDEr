@@ -17,12 +17,12 @@
 #'---
 
 source('.wBuild/wBuildParser.R')
-parseWBHeader("Scripts/Tissues/Single_Tissues/tissuesList.R")
+parseWBHeader("Scripts/Summary/Structure/tissuesList.R")
 
 library(data.table)
 library(magrittr)
 
-setwd("~/projects/GTExAna/")
+setwd("~/projects/GTExGenDEr/")
 
 con <- gzfile(snakemake@input[["countsTpm"]])
 

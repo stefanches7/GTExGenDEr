@@ -565,59 +565,14 @@ border-color: #4078c0;
 <body>
 <nav id="TOC" role="doc-toc">
 <ul>
-<li><a href="#wbuild">wBuild</a><ul>
-<li><a href="#documentation">Documentation</a></li>
-<li><a href="#features">Features</a></li>
-<li><a href="#installation">Installation</a></li>
-<li><a href="#getting-started">Getting started</a></li>
-<li><a href="#usage">Usage</a></li>
-<li><a href="#github">GitHub</a></li>
-<li><a href="#credits">Credits</a></li>
+<li><a href="#gtexgender">GTExGenDEr</a><ul>
+<li><a href="#structure">Structure</a></li>
 </ul></li>
 </ul>
 </nav>
-<h1 id="wbuild">wBuild</h1>
-<p>Automatic build tool for R Reports</p>
-<h2 id="documentation">Documentation</h2>
-<p>Full documentation is available at https://wbuild.readthedocs.io</p>
-<h2 id="features">Features</h2>
-<ul>
-<li>Supports reproducible research
-<ul>
-<li>Append R-markdown scripts to the Snakemake pipeline</li>
-</ul></li>
-<li>Render the R scripts to a structured web page</li>
-<li>Snakemake rules written directly in the header of scripts
-<ul>
-<li>Dependencies updated automatically!</li>
-</ul></li>
-</ul>
-<h2 id="installation">Installation</h2>
-<p>Install using pip:</p>
-<ul>
-<li><code>pip install wBuild</code></li>
-</ul>
-<p>See “Installation” tab in the documentation for more details.</p>
-<h2 id="getting-started">Getting started</h2>
-<ul>
-<li>Navigate to an empty directory</li>
-<li>Run <code>wbuild demo</code>. This will create a wBuild demo project with various examples</li>
-<li>Explore the files in <code>Scripts/</code></li>
-<li>Run <code>snakemake</code> to build the project</li>
-<li>Open <code>Output/html/index.html</code> in your web browser
-<ul>
-<li>There you will find useful and understandable examples of features and operations with wBuild</li>
-</ul></li>
-</ul>
-<h2 id="usage">Usage</h2>
-<ul>
-<li>Navigate to the root of your project (new or existing)</li>
-<li>Run <code>wbuild init</code></li>
-<li>Run <code>snakemake</code></li>
-</ul>
-<h2 id="github">GitHub</h2>
-<p>wBuild is an open-source software. The source-code is available at https://github.com/gagneurlab/wBuild.</p>
-<h2 id="credits">Credits</h2>
-<p>Leonhard Wachutka</p>
+<h1 id="gtexgender">GTExGenDEr</h1>
+<p>See <a href="https://docs.google.com/document/d/13my9tC9hNQITXJx0JcaoQhQj3OSR7DcZJSrnXeScHn0/edit?usp=sharing">Google doc</a> for the project description</p>
+<h2 id="structure">Structure</h2>
+<p>This project uses <a href="https://wbuild.readthedocs.io">wBuild</a> with <a href="https://snakemake.readthedocs.io/en/stable/">Snakemake</a> for automatic pipeline execution. Build running <code>snakemake</code> CLI (ensure all the files required by <code>Snakefile</code> and <code>Scripts</code> are in place). <code>Scripts</code> directory contains Scripts for the project, <code>Output/</code> HTML reports and processed data. <code>Output/html/index.html</code> is the HTML report entry point. From there, navigate to different analysis through the tabs on the header.</p>
 </body>
 </html>

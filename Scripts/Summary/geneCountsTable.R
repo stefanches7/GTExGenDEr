@@ -14,10 +14,10 @@
 #'---
 
 source('.wBuild/wBuildParser.R')
-parseWBHeader("Scripts/geneCountsTable.R")
+parseWBHeader("Scripts/Summary/geneCountsTable.R")
 
 
-setwd("~/projects/GTExAna/")
+setwd("~/projects/GTExGenDEr/")
 library(data.table)
 library(ggplot2)
 library(MASS)
