@@ -16,13 +16,14 @@
 #'   code_download: TRUE
 #'---
 
+setwd("~/projects/GTExGenDEr/")
 source('.wBuild/wBuildParser.R')
 parseWBHeader("Scripts/Summary/Structure/tissuesList.R")
 
 library(data.table)
 library(magrittr)
 
-setwd("~/projects/GTExGenDEr/")
+
 
 con <- gzfile(snakemake@input[["countsTpm"]])
 
