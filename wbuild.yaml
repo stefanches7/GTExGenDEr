@@ -1,0 +1,6 @@
+---
+projectTitle: GTExGenDEr
+htmlOutputPath: Output/html
+webDir: /s/public_webshare/project/GTExGenDEr
+fileRegex: .*
+readmePath: readme.md
