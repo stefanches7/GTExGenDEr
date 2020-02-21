@@ -14,4 +14,9 @@ rule all:
 rule generateTissues:
 	input: "data/generalTissues.txt", "data/detailedTissues.txt"
 	output: touch("Output/dirStructure.done")
-	shell: "bash createTissueDirs.sh"
+	shell: "bash Scripts/createTissueDirs.sh"
+
+rule scriptsMapping:
+	input: "Output/dirStructure.done"
+	output: touch("Output/scriptMapping.done")
+	shell: "bash Scripts/scriptsMapping.sh"

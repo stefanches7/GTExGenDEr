@@ -3,7 +3,6 @@
 #' author: Stefan Dvoretskii
 #' wb:
 #'  input:
-#'  - scriptMappingFlag: "Output/scriptMapping.done"
 #'  - counts: "data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct.gz"
 #'  - countsTpm: "data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct"
 #'  - sampleAnno: "data/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
@@ -112,8 +111,7 @@ Ymale <- geneEnsIds %in% msYgenes
 Xescape <- geneEnsIds %in% XiEgenes
 
 index <- list(Y=Ymale, X=Xescape)
-
-fry(y$counts, index=index, design = design) # limma gene set rotation tests
+fry(y, index=index, design = design) # limma gene set rotation tests
 barcodeplot(qlf$table$logFC, index[[1]], index[[2]])
 #' red is women, blue is men
 
