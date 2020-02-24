@@ -4,12 +4,13 @@
 #' wb:
 #'  input:
 #'  - counts: "data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct.gz"
-#'  - countsTpm: "data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz"
+#'  - countsTpm: "data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct"
 #'  - sampleAnno: "data/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
 #'  - phenotypeAnno: "data/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt"
 #'  output:
 #'  - generalTissues: "data/generalTissues.txt"
 #'  - detailedTissues: "data/detailedTissues.txt"
+#'  type: script
 #' output:
 #'  html_document:
 #'   code_folding: show
@@ -25,7 +26,7 @@ library(magrittr)
 
 
 
-con <- gzfile(snakemake@input[["countsTpm"]])
+con <- file(snakemake@input[["countsTpm"]])
 
 header <- readLines(con, n = 3)[[3]]
 availableSamples <-  strsplit(header, "\t")[[1]]

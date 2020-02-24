@@ -3,27 +3,29 @@
 #' author: Stefan Dvoretskii
 #' wb:
 #'  input:
-#'  - counts: "data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.gct.gz"
+#'  - scriptMappingFlag: "Output/scriptMapping.done"
 #'  - countsTpm: "data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct"
 #'  - sampleAnno: "data/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
 #'  - phenotypeAnno: "data/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt"
+#'  - geneAnno: "data/geneAnno.tsv"
 #'  output:
 #'  - deTopHits: "{wbPD_PP}/deTopHits.tsv"
 #'  - goTopHits: "{wbPD_PP}/goTopHits.tsv"
 #' output:
 #'  html_document:
-#'   code_folding: show
+#'   code_folding: hide
 #'   code_download: TRUE
 #'---
 
 setwd("~/projects/GTExGenDEr/")
 source('.wBuild/wBuildParser.R')
+source("Scripts/_Template/utils.R")
 parseWBHeader("Scripts/_Template/singleTissueAnalysis.R")
 
 tissueType <- snakemake@wildcards[["wbP"]]
-recoveredDashes <- gsub("___", " - ", snakemake@wildcards[["wbPP"]])
-recoveredBrackets <- recoveredDashes %>% gsub(pattern = "8_", replacement = "(") %>% gsub(pattern = "_9", replacement = ")")
-currentTissue <- gsub("_", " ", recoveredBrackets)
+
+currentTissue <- recoverTissueName(snakemake@wildcards[["wbPP"]])
+print(paste0("For tissue ", currentTissue))
 
 library(data.table)
 library(ggplot2)
@@ -36,7 +38,6 @@ library(DT)
 #' ## Read in the data
 
 dt_tpm <- fread(file = snakemake@input[["countsTpm"]], fill = T, skip = 2)
-dim(dt_tpm)
 
 #' ## Annotation
 
@@ -48,9 +49,8 @@ genderlev <- factor(anno$SEX)
 levels(genderlev) <- c("M", "F")
 anno[, SEX:=genderlev] 
 
-#' ### Analysis of differences
+#' ## Analysis of differences
 
-print(paste0("For tissue", currentTissue, "\n"))
 if (tissueType == "GeneralTissues") {
   maleTissIdx <- anno[SMTS == currentTissue & SEX == "M", SAMPID]
   femTissIdx <- anno[SMTS == currentTissue & SEX == "F", SAMPID]
@@ -61,16 +61,15 @@ if (tissueType == "GeneralTissues") {
 X <- cbind(dt_tpm[, ..femTissIdx], dt_tpm[, ..maleTissIdx]) %>% as.matrix
 # TODO remove all zero rows
 
-#' fit glm with edgeR
+#' ### GLM
 
 conditions <- c(rep(0, length(femTissIdx)), rep(1, length(maleTissIdx)))
 
-data(annotEnsembl63)
+geneAnno <- fread(snakemake@input[["geneAnno"]])
 
-geneAnno <- annotEnsembl63[,c("Symbol","Chr")] # TODO change to more recent/biomaRt?
+geneEnsIds <- dt_tpm$Name
+y <- DGEList(counts = X, group = conditions, genes = geneAnno)
 
-geneEnsIds <- tstrsplit(dt_tpm$Name,"\\.")[[1]]
-y <- DGEList(counts = X, group = conditions, genes = geneAnno[geneEnsIds,])
 design <- model.matrix(~conditions) # design of DE analysis
 
 y <- estimateDisp(y, design = design)
@@ -78,13 +77,18 @@ plotBCV(y)
 fit <- glmQLFit(y, design = design)
 plotQLDisp(fit)
 qlf <- glmQLFTest(fit)
+
+#' ### Differential genes
 tt <- topTags(qlf, adjust.method = "BH", p.value = 0.05, n = nrow(counts))
 
 deGeneRows <- rownames(tt) %>% as.numeric
 
 diffGenes <- dt_tpm[deGeneRows, Name]
 diffTable <- data.table(tt$table)[,ENS_ID:=diffGenes]
+diffTable[,Tissue:=currentTissue]
 write.table(diffTable, file = snakemake@output[["deTopHits"]], sep = "\t", row.names = F)
+
+
 cols <- colnames(diffTable)[3:5]
 diffTable[,(cols):=round(.SD, 5), .SDcols = cols]
 DT::datatable(diffTable) # visual table for the server
@@ -93,25 +97,30 @@ summary(decideTests(qlf))
 plotMD(qlf)
 abline(h = c(-1, 1), col = "blue")
 
-#' get enriched GO/KEGG categories with limma
+#' ### Enriched GO categories
 go <- goana(qlf)
-goCat <- topGO(go, ont="BP", sort="Up", n=100, truncate=100) %>% as.data.table
-write.table(goCat, file = snakemake@output[["goTopHits"]], sep = "\t", row.names = F)
+goUp <- topGO(go, ont="BP", sort="Up", number=200) %>% as.data.table
+goDown <- topGO(go, ont="BP", sort="Down", number=200) %>% as.data.table
+
+goCat <- rbindlist(goUp, goDown)
+
 cols <- c("P.Up", "P.Down")
 DT::datatable(goCat[P.Up < 0.05 | P.Down < 0.05,(cols):=round(.SD, 5), .SDcols = cols])
+goCat[,Tissue:=currentTissue]
+write.table(goCat, file = snakemake@output[["goTopHits"]], sep = "\t", row.names = F)
 #kegg <- kegga(qlf)
-#skeggCat <- topKEGG(kegg, sort = "Up")
-data(genderGenes)
+#keggCat <- topKEGG(kegg, sort = "Up")
 
-#' as it seems no big differential hits on categories
 
 #' ## Compare DE genes to already known Y-specific/X-escaping(=female specific) genes
+
 data("genderGenes")
 Ymale <- geneEnsIds %in% msYgenes
 Xescape <- geneEnsIds %in% XiEgenes
 
 index <- list(Y=Ymale, X=Xescape)
-fry(y, index=index, design = design) # limma gene set rotation tests
+
+fry(y$counts, index=index, design = design) # limma gene set rotation tests
 barcodeplot(qlf$table$logFC, index[[1]], index[[2]])
 #' red is women, blue is men
 
@@ -121,3 +130,5 @@ with(qlf$table, points(logCPM[Xescape],logFC[Xescape],pch=16,col="dodgerblue"))
 legend("bottomleft",legend=c("Ymale genes","Xescape genes"),
        pch=16,col=c("red","dodgerblue"))
 
+#' ### Differential genes excluding apart from X, Y chromosomes
+DT::datatable(data.table(tt$table)[Chr != "X" & Chr != "Y",])
