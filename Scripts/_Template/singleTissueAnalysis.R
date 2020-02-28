@@ -11,6 +11,7 @@
 #'  output:
 #'  - deTopHits: "{wbPD_PP}/deTopHits.tsv"
 #'  - goTopHits: "{wbPD_PP}/goTopHits.tsv"
+#'  - keggTopHits: "{wbPD_PP}/keggTopHits.tsv"
 #' output:
 #'  html_document:
 #'   code_folding: hide
@@ -29,10 +30,9 @@ print(paste0("For tissue ", currentTissue))
 
 library(data.table)
 library(ggplot2)
-library(MASS)
 library(magrittr)
-library(edgeR)
 library(tweeDEseqCountData)
+library(edgeR)
 library(DT)
 
 #' ## Read in the data
@@ -80,12 +80,12 @@ plotQLDisp(fit)
 qlf <- glmQLFTest(fit)
 
 #' ### Differential genes
-tt <- topTags(qlf, adjust.method = "BH", p.value = 0.05, n = nrow(counts))
+tt <- topTags(qlf, adjust.method = "BH", p.value = 0.05, n = nrow(X))
 
 deGeneRows <- rownames(tt) %>% as.numeric
 
 diffGenes <- dt_tpm[deGeneRows, Name]
-diffTable <- data.table(tt$table)[,ENS_ID:=diffGenes]
+diffTable <- data.table(tt$table)
 
 chromosomeCount <- table(diffTable$chromosome_name)
 t <- sort(chromosomeCount, decreasing = T)[1:10]
@@ -97,7 +97,7 @@ diffTable[,Tissue:=currentTissue]
 write.table(diffTable, file = snakemake@output[["deTopHits"]], sep = "\t", row.names = F)
 
 
-cols <- colnames(diffTable)[3:5]
+cols <- c("logFC", "logCPM", "F")
 diffTable[,(cols):=round(.SD, 5), .SDcols = cols]
 DT::datatable(diffTable) # visual table for the server
 
@@ -110,19 +110,26 @@ go <- goana(qlf)
 goUp <- topGO(go, ont="BP", sort="Up", number=200) %>% as.data.table
 goDown <- topGO(go, ont="BP", sort="Down", number=200) %>% as.data.table
 
-goCat <- rbindlist(goUp, goDown)
+goCat <- rbind(goUp, goDown)
 
 cols <- c("P.Up", "P.Down")
-DT::datatable(goCat[P.Up < 0.05 | P.Down < 0.05,(cols):=round(.SD, 5), .SDcols = cols])
+DT::datatable(goCat[P.Up < 0.05 || P.Down < 0.05,(cols):=round(.SD, 5), .SDcols = cols])
 goCat[,Tissue:=currentTissue]
 write.table(goCat, file = snakemake@output[["goTopHits"]], sep = "\t", row.names = F)
-#kegg <- kegga(qlf)
-#keggCat <- topKEGG(kegg, sort = "Up")
+kegg <- kegga(qlf)
+keggUp <- topKEGG(kegg, sort = "Up", n = 100)
+keggDown <- topKEGG(kegg, sort = "Down", n = 100)
 
+keggCat <- rbind(keggUp, keggDown)
+cols <- c("P.Up", "P.Down")
+DT::datatable(keggCat[P.Up < 0.05 || P.Down < 0.05,(cols):=round(.SD, 5), .SDcols = cols])
+keggCat[,Tissue:=currentTissue]
+write.table(keggCat, file = snakemake@output[["keggTopHits"]], sep = "\t", row.names = F)
 
 #' ## Compare DE genes to already known Y-specific/X-escaping(=female specific) genes
 
 data("genderGenes")
+geneEnsIds <- tstrsplit(dt_tpm$Name, "\\.")[[1]]
 Ymale <- geneEnsIds %in% msYgenes
 Xescape <- geneEnsIds %in% XiEgenes
 
@@ -139,4 +146,4 @@ legend("bottomleft",legend=c("Ymale genes","Xescape genes"),
        pch=16,col=c("red","dodgerblue"))
 
 #' ### Differential genes excluding apart from X, Y chromosomes
-DT::datatable(data.table(tt$table)[Chr != "X" & Chr != "Y",])
+DT::datatable(data.table(tt$table)[chromosome_name != "X" & chromosome_name != "Y",])

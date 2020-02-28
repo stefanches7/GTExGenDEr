@@ -37,5 +37,5 @@
 
 echo "Slurm job started"
 snakemake --unlock
-snakemake --cores 6
+snakemake --cores 6 --reason
 echo "Slurm job ended"

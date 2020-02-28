@@ -25,6 +25,8 @@ dt_tpm <- fread(file = snakemake@input[["countsTpm"]], fill = T, skip = 2)
 ensembl <- useEnsembl("ensembl", dataset = "hsapiens_gene_ensembl")
 anno <- getBM(attributes = c("description", "chromosome_name", "hgnc_symbol", "ensembl_gene_id_version"), 
       filters = "ensembl_gene_id_version", values = dt_tpm$Name, mart = ensembl)
-a <- anno[,1:3]
-rownames(a) <- anno$ensembl_gene_id_version
-write.table(anno, file = snakemake@output[["geneAnno"]], row.names = F, sep = "\t")
+
+m <- merge(data.table(id = dt_tpm$Name), anno, all.x = T, by.x = "id", by.y = "ensembl_gene_id_version", sort = F) %>%
+  unique(by = "id")
+
+write.table(m, file = snakemake@output[["geneAnno"]], row.names = F, sep = "\t")

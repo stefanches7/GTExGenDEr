@@ -47,20 +47,27 @@ for (tissueDir in dir(detailedTissuesResults)) {
 }
 names(go_dt)[3] <- "Size"
 
-symbolsCount <- table(dt_dt$Symbol)
+symbolsCount <- table(dt_dt$hgnc_symbol)
 sort(symbolsCount, decreasing = T)[1:10]
+
+ensgCount <- table(dt_dt$id)
+sort(ensgCount, decreasing = T)[1:10]
 
 #' ## Overall DE analysis
 
-hist(symbolsCount %>% as.numeric, breaks = 50)
+hist(symbolsCount[2:length(symbolsCount)] %>% as.numeric, breaks = 50, main = "Gene symbols in tissues", 
+     xlab = "# occured across tissues", ylab = "Count gene symbols")
+hist(ensgCount[2:length(symbolsCount)] %>% as.numeric, breaks = 50, main = "Genes in tissues", 
+     xlab = "# occured across tissues", ylab = "Count gene id")
+
 sum(symbolsCount > 15)
-hist(symbolsCount %>% as.numeric, breaks = 50, xlim = c(0,10), xlab = "Times occured significant", 
+hist(symbolsCount[2:length(symbolsCount)] %>% as.numeric, breaks = 50, xlim = c(0,10), xlab = "Times occured significant", 
      main = "Significance of genes count across general tissues")
 
-hist(symbolsCountGen %>% as.numeric, breaks = 10, main = "Significance of genes count across general tissues",
-     xlab = "Times occured significant")
+#hist(symbolsCountGen %>% as.numeric, breaks = 10, main = "Significance of genes count across general tissues",
+#     xlab = "Times occured significant")
 
-chromosomeCount <- table(dt_dt$Chr)
+chromosomeCount <- table(dt_dt$chromosome_name)
 t <- sort(chromosomeCount, decreasing = T)[1:10]
 plt <- data.table(name = factor(names(t), levels = names(t)), value = t %>% as.numeric())
 ggplot(plt, aes(name, value)) + geom_bar(stat = "identity", fill = "springgreen2") +
@@ -71,4 +78,9 @@ termCount <- table(go_dt$Term)
 sort(termCount, decreasing = T)[1:10]
 #' ### GO terms times enriched in detailed tissues
 dt <- merge(go_dt[, .(Term, Size)], go_dt[, .N, by = "Term"])
-DT::datatable(dt)
+colnames(dt) <- c("Term", "Size", "# occured across tissues")
+ggplot(dt, aes(Size, `# occured across tissues`)) + geom_point()
+tissues <- vapply(dt$Term, function(t) paste(go_dt[Term == t,Tissue], collapse = ",", sep = ",\n"), FUN.VALUE = character(1)) %>%
+  as.character
+dt[,Tissues:=tissues]
+DT::datatable(unique(dt))
