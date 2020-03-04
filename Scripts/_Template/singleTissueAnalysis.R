@@ -11,7 +11,6 @@
 #'  output:
 #'  - deTopHits: "{wbPD_PP}/deTopHits.tsv"
 #'  - goTopHits: "{wbPD_PP}/goTopHits.tsv"
-#'  - keggTopHits: "{wbPD_PP}/keggTopHits.tsv"
 #' output:
 #'  html_document:
 #'   code_folding: hide
@@ -107,24 +106,16 @@ abline(h = c(-1, 1), col = "blue")
 
 #' ### Enriched GO categories
 go <- goana(qlf)
-goUp <- topGO(go, ont="BP", sort="Up", number=200) %>% as.data.table
-goDown <- topGO(go, ont="BP", sort="Down", number=200) %>% as.data.table
+goUp <- topGO(go, ont="BP", sort="Up", number=20000) %>% as.data.table
+goDown <- topGO(go, ont="BP", sort="Down", number=20000) %>% as.data.table
 
 goCat <- rbind(goUp, goDown)
 
 cols <- c("P.Up", "P.Down")
-DT::datatable(goCat[P.Up < 0.05 || P.Down < 0.05,(cols):=round(.SD, 5), .SDcols = cols])
-goCat[,Tissue:=currentTissue]
-write.table(goCat, file = snakemake@output[["goTopHits"]], sep = "\t", row.names = F)
-kegg <- kegga(qlf)
-keggUp <- topKEGG(kegg, sort = "Up", n = 100)
-keggDown <- topKEGG(kegg, sort = "Down", n = 100)
-
-keggCat <- rbind(keggUp, keggDown)
-cols <- c("P.Up", "P.Down")
-DT::datatable(keggCat[P.Up < 0.05 || P.Down < 0.05,(cols):=round(.SD, 5), .SDcols = cols])
-keggCat[,Tissue:=currentTissue]
-write.table(keggCat, file = snakemake@output[["keggTopHits"]], sep = "\t", row.names = F)
+gcCutoff <- goCat[(P.Up < 0.01) | (P.Down < 0.01), ]
+DT::datatable(gcCutoff)
+gcCutoff[,Tissue:=currentTissue]
+write.table(gcCutoff, file = snakemake@output[["goTopHits"]], sep = "\t", row.names = F)
 
 #' ## Compare DE genes to already known Y-specific/X-escaping(=female specific) genes
 
